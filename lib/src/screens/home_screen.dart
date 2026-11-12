@@ -6,6 +6,7 @@ import 'package:airgapped_zcash_signer/src/screens/qr_scanner_screen.dart';
 import 'package:airgapped_zcash_signer/src/screens/review_screen.dart';
 import 'package:airgapped_zcash_signer/src/theme/signer_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
     return Scaffold(
       body: SignerBackground(
         child: SafeArea(
@@ -133,8 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _StatusRow(
                       icon: Icons.wifi_off_rounded,
-                      title: 'Airgap ready',
-                      detail: 'Release networking disabled',
+                      title: isIOS ? 'Offline signer' : 'Airgap ready',
+                      detail: isIOS
+                          ? 'Disable device radios before use'
+                          : 'Release networking disabled',
                       positive: true,
                     ),
                     Divider(height: 30, color: SignerColors.border),
@@ -146,7 +150,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? 'Testnet key ready'
                           : 'Wallet not set up',
                       detail: _provisioned
-                          ? 'Seed encrypted with Android Keystore'
+                          ? (isIOS
+                                ? 'Seed protected by iOS Keychain'
+                                : 'Seed encrypted with Android Keystore')
                           : 'Create or import a testnet wallet',
                       positive: _provisioned,
                     ),

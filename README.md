@@ -3,7 +3,7 @@
 
 # Zigner
 
-Zigner is a testnet-only, Android-first air-gapped signer prototype for Zcash.
+Zigner is a testnet-only, Android and iOS offline signer prototype for Zcash.
 It pairs with a watch-only desktop wallet over animated QR codes: the desktop
 constructs a PCZT, the offline phone reviews and signs it, and the desktop
 finalizes and broadcasts the transaction.
@@ -20,6 +20,7 @@ are implemented in Rust and exposed through `flutter_rust_bridge`.
 
 - Create or import a BIP-39 recovery phrase.
 - Store the phrase using Android Keystore-backed encrypted storage.
+- On iOS, store the phrase in the app's own Keychain access group.
 - Export account 0's testnet UFVK as an animated `zcash-accounts` UR.
 - Import that watch-only account into the compatible Vizor desktop prototype.
 - Scan animated `zcash-sign-batch` requests containing compact PCZTs.
@@ -36,9 +37,11 @@ can operate while the phone is connected for development.
 
 - Linux, macOS, or Windows development host
 - Flutter SDK compatible with Dart `^3.13.5`
-- Rust stable toolchain with Android targets
-- Android SDK, platform tools, NDK, and a USB-connected Android device
-- USB debugging enabled while developing
+- Flutter 3.47.8 is pinned in `.fvmrc` for reproducible local builds.
+- Rust stable toolchain with targets for the selected platform
+- Android: Android SDK, platform tools, NDK, and a USB-connected Android device
+  with USB debugging enabled while developing
+- iOS: macOS, Xcode, CocoaPods, and a simulator or developer-enabled iPhone
 
 Confirm the local toolchain with:
 
@@ -76,6 +79,56 @@ minutes.
 
 Press `r` in that terminal for hot reload and `R` for a full hot restart.
 Changes to Rust code require a rebuild, not just hot reload.
+
+## Build for iOS
+
+The iOS app uses the separate bundle identifier `org.zcash.airgap.zigner` and
+requires iOS 15 or later. It does not share storage with Vizor or Vizor Vault.
+Select your own signing team; the project does not pin a development team.
+
+```sh
+fvm use 3.47.8 --skip-pub-get
+fvm flutter pub get --enforce-lockfile
+fvm flutter build ios --simulator --debug --target lib/main.dart
+```
+
+For a signed physical-device Release build, configure Flutter for the production
+entry point, then build with your team:
+
+```sh
+fvm flutter build ios --release --no-codesign --config-only --target lib/main.dart
+cd ios
+xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release \
+  -destination 'generic/platform=iOS' -derivedDataPath ../build/ios-device \
+  DEVELOPMENT_TEAM=<YOUR_TEAM_ID> -allowProvisioningUpdates
+cd ..
+xcrun devicectl device install app --device <DEVICE_ID> \
+  build/ios-device/Build/Products/Release-iphoneos/Runner.app
+xcrun devicectl device process launch --device <DEVICE_ID> org.zcash.airgap.zigner
+```
+
+The existing Rust plugin uses CocoaPods through Cargokit; keep CocoaPods
+available even when Flutter enables Swift Package Manager. No seed-handling or
+QR protocol changes are included in this platform integration.
+
+Before testing the physical iPhone camera, end Device Hub's screen interaction.
+An active Device Hub interaction blocks camera access and can deliver blank
+video, even when camera permission is granted. See Apple's
+[Device Hub camera access restrictions](https://developer.apple.com/documentation/xcode/interacting-with-your-app-in-device-hub).
+Use the iPhone itself to scan the test QR after ending that interaction.
+
+iOS has no Android-style general `INTERNET` permission switch. Disconnect USB
+after installation and disable cellular, Wi-Fi, and Bluetooth for offline tests.
+The app's Keychain storage does not establish an air gap or hardware Zcash
+signing.
+
+The focused integration test imports a public zero-entropy phrase, checks native
+storage and Rust account QR generation, then deletes its own fixture. Run it
+only on a fresh, isolated simulator app:
+
+```sh
+fvm flutter test integration_test/ios_smoke_test.dart -d <SIMULATOR_ID>
+```
 
 ## End-to-end demo
 
@@ -115,6 +168,7 @@ rust/src/api/vizor.rs        Account export and PCZT signing API
 rust/src/frb_generated.rs    Generated native bindings
 rust_builder/                Cargokit native build integration
 android/                     Android manifests and application wrapper
+ios/                         iOS runner, camera permission, and Keychain identity
 ```
 
 The QR protocol uses multipart URs so larger PCZTs and signature responses can
