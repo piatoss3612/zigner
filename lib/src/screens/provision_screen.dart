@@ -58,7 +58,7 @@ class _ProvisionScreenState extends State<ProvisionScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'The phrase is encrypted at rest using Android Keystore. This prototype is testnet-only.',
+            'The phrase is encrypted at rest using secure storage on this device. This prototype is testnet-only.',
           ),
           const SizedBox(height: 24),
           if (_generated case final phrase?) ...[

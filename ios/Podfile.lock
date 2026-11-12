@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - signer_core (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - signer_core (from `.symlinks/plugins/signer_core/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  signer_core:
+    :path: ".symlinks/plugins/signer_core/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  signer_core: 535fb8828293a12cfda0d3c28472097048985d46
+
+PODFILE CHECKSUM: 3ba3a73b1b12adcf321a227a745625fe0888cc82
+
+COCOAPODS: 1.16.2
